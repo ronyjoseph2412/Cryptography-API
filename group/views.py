@@ -68,24 +68,22 @@ def generate_shares(n, m, secret):
 def aes_encrypt(password, plaintext):
     str_val = str(password)
     key = str_val.encode()
-    cipher = AES.new(key, AES.MODE_EAX)
+    cipher = AES.new(key, AES.MODE_EAX,nonce=b'1234567890123456')
     data = plaintext.encode()
-    nonce = cipher.nonce
     ciphertext = cipher.encrypt(data)
     print("Cipher text:", ciphertext)
-    return ciphertext,nonce
+    return ciphertext
 
 def aes_decrypt(password, ciphertext):
     str_val = str(password)
     key = str_val.encode()
-    nonce = b'\xbc\xe3\xc2\x13\xb3\xb2-E\xe9\xacGD=/A\xcf'
-    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+    print(type(key))
+    cipher = AES.new(key, AES.MODE_EAX,nonce=b'1234567890123456')
     plaintext = cipher.decrypt(ciphertext)
     print("Plain text:", plaintext)
-    # type(plaintext.decode())
-    # print(codecs.decode(plaintext))
-    
-    return plaintext.decode()
+    # # type(plaintext.decode())
+    # # print(codecs.decode(plaintext))
+    # print
 
 
 
@@ -194,7 +192,7 @@ def post_data_for_sss(request):
         k = request.data['members_required']
         secret = request.data['secret']
         shares = generate_shares(n, k, secret)
-        group_data.image_url,group_data.nonce=aes_encrypt(secret,imgurl)
+        group_data.image_url=aes_encrypt(secret,imgurl)
         group_data.members_required = k
         group_data.combined_shares = {"combined_shares":[]}
         group_data.save()
@@ -255,14 +253,15 @@ def get_image_url(request):
     if(user.is_authenticated):
         user_data = User_data.objects.get(username=user.username)
         group_data = Group_Log.objects.get(group_name=request.data['group_name'])
-        print(len(group_data.combined_shares['combined_shares']))
+        # print(len(group_data.combined_shares['combined_shares']))
         if(len(group_data.combined_shares['combined_shares'])>=group_data.members_required):
-            print(group_data.image_url)
             secret = reconstruct_secret(group_data.combined_shares['combined_shares'])
-            x=aes_decrypt(secret,group_data.image_url)
-            print(x)
+            # aes_decrypt(secret,group_data.image_url)
+            # print(x)
+            # print(group_data.)
             return Response({
-                'secret':secret
+                'secret':secret,
+                'image':group_data.image.url
             })
         return Response({
                 'error':'Not Enough Shares'

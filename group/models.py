@@ -18,7 +18,7 @@ class Group_Log(models.Model):
     members_required = models.IntegerField(default=2)
     combined_shares = jsonfield.JSONField(default={"combined_shares":[]})
     image_url = models.CharField(max_length=300,default='')
-    nonce = models.CharField(max_length=300,default='')
+    # nonce = models.TextField(max_length=256)
     image = models.ImageField(upload_to=nameFile, blank=True, null=True)
     def __str__(self):
         return self.group_name
