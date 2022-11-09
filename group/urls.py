@@ -12,4 +12,6 @@ urlpatterns = [
     path('generateshares', views.post_data_for_sss),
     path('commitshare', views.commit_share),
     path('getshare', views.get_secret),
+    path('uploadimage', views.upload_image),
+    path('getimage', views.get_image_url),
 ]

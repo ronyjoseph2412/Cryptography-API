@@ -10,7 +10,7 @@ from .serializers import RegisterSerializer
 import json
 from django.http import JsonResponse
 from django.contrib.auth.models import User
-
+from Crypto.Cipher import AES
 
 # SSS
 import random
@@ -64,6 +64,28 @@ def generate_shares(n, m, secret):
 
     return shares
 
+# AES Part
+def aes_encrypt(password, plaintext):
+    str_val = str(password)
+    key = str_val.encode()
+    cipher = AES.new(key, AES.MODE_EAX)
+    data = plaintext.encode()
+    nonce = cipher.nonce
+    ciphertext = cipher.encrypt(data)
+    print("Cipher text:", ciphertext)
+    return ciphertext,nonce
+
+def aes_decrypt(password, ciphertext):
+    str_val = str(password)
+    key = str_val.encode()
+    nonce = b'\xbc\xe3\xc2\x13\xb3\xb2-E\xe9\xacGD=/A\xcf'
+    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+    plaintext = cipher.decrypt(ciphertext)
+    print("Plain text:", plaintext)
+    # type(plaintext.decode())
+    # print(codecs.decode(plaintext))
+    
+    return plaintext.decode()
 
 
 
@@ -167,12 +189,14 @@ def post_data_for_sss(request):
     if(user.is_authenticated):
         user_data = User_data.objects.get(username=user.username)
         group_data = Group_Log.objects.get(group_name=request.data['group_name'])
+        imgurl = group_data.image.url
         n = len(group_data.group_members['group_members'])
         k = request.data['members_required']
         secret = request.data['secret']
         shares = generate_shares(n, k, secret)
+        group_data.image_url,group_data.nonce=aes_encrypt(secret,imgurl)
         group_data.members_required = k
-        group_data.combined_shares['combined_shares'] = {"combined_shares":[]}
+        group_data.combined_shares = {"combined_shares":[]}
         group_data.save()
         for i in range(0,len(group_data.group_members['group_members'])):
             user_data = User_data.objects.get(username=group_data.group_members['group_members'][i])
@@ -224,7 +248,46 @@ def get_secret(request):
                 'error':'Not Enough Shares'
         })
     return(Response({'error':'User is not authenticated'},status=400))
+
+@api_view(['POST'])
+def get_image_url(request):
+    user = request.user
+    if(user.is_authenticated):
+        user_data = User_data.objects.get(username=user.username)
+        group_data = Group_Log.objects.get(group_name=request.data['group_name'])
+        print(len(group_data.combined_shares['combined_shares']))
+        if(len(group_data.combined_shares['combined_shares'])>=group_data.members_required):
+            print(group_data.image_url)
+            secret = reconstruct_secret(group_data.combined_shares['combined_shares'])
+            x=aes_decrypt(secret,group_data.image_url)
+            print(x)
+            return Response({
+                'secret':secret
+            })
+        return Response({
+                'error':'Not Enough Shares'
+        })
+    return(Response({'error':'User is not authenticated'},status=400))
     
+
+
+
+# Upload Image to the Group
+@api_view(['POST'])
+def upload_image(request):
+    user = request.user
+    if(user.is_authenticated):
+        # user_data = User_data.objects.get(username=user.username)
+        group_data = Group_Log.objects.get(group_name=request.data['group_name'])
+        print(group_data.image)
+        group_data.image = request.data['image']
+        group_data.save()
+        return Response({
+            "img_url":group_data.image.url if group_data.image else None
+        })
+    return(Response({'error':'User is not authenticated'},status=400))
+
+
 
 # @api_view(['POST'])
 # def get_group_log(request):

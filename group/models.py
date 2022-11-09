@@ -11,12 +11,14 @@ class User_data(models.Model):
 
 class Group_Log(models.Model):
     def nameFile(instance,filename):
-        return '/'.join(['images', str(instance.group_name), filename])
+        return '/'.join(['images',filename])
     group_name = models.CharField(max_length=100)
     group_members = jsonfield.JSONField(default={"group_members":[]})
     group_data = jsonfield.JSONField(default={"group_data":[]})
     members_required = models.IntegerField(default=2)
     combined_shares = jsonfield.JSONField(default={"combined_shares":[]})
+    image_url = models.CharField(max_length=300,default='')
+    nonce = models.CharField(max_length=300,default='')
     image = models.ImageField(upload_to=nameFile, blank=True, null=True)
     def __str__(self):
         return self.group_name
