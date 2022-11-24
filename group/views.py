@@ -260,7 +260,7 @@ def get_image_url(request):
             # print(x)
             # print(group_data.)
             return Response({
-                'secret':secret,
+                # 'secret':secret,
                 'image':group_data.image.url
             })
         return Response({
@@ -288,14 +288,17 @@ def upload_image(request):
 
 
 
-# @api_view(['POST'])
-# def get_group_log(request):
-#     user = request.user
-#     if(user.is_authenticated):
-#         group_data = Group_Log.objects.get(group_name=request.data['group_name'])
-#         if(user.username in group_data.group_members['group_members']):
-#             return Response({
-#                 'group_log':group_data.group_data['group_data']
-#             })
+@api_view(['POST'])
+def get_group_log(request):
+    user = request.user
+    if(user.is_authenticated):
+        group_data = Group_Log.objects.get(group_name=request.data['group_name'])
+        return Response({
+            "combined_shares":len(group_data.combined_shares["combined_shares"]),
+            "members_required":group_data.members_required
+        })
+
+
+
     
-#     return(Response({'error':'User is not authenticated'},status=400))
+    return(Response({'error':'User is not authenticated'},status=400))
